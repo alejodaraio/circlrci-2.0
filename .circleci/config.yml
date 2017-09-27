@@ -15,20 +15,20 @@ jobs:
           paths:
             - ~/app
 
-#  bundle_dependencies:
-#    <<: *defaults
-#    steps:
-#      - restore_cache:
-#          keys:
-#            - checkout-cache-{{ .Branch }}-{{ .Environment.CIRCLE_SHA1 }}
-#      - restore_cache:
-#          keys:
-#            - dependency-cache-{{ .Branch }}-{{ checksum "package.json" }}
-#      - run: yarn install
-#      - save_cache:
-#          key: dependency-cache-{{ .Branch }}-{{ checksum "package.json" }}
-#          paths:
-#            - ~/app/node_modules
+  bundle_dependencies:
+    <<: *defaults
+    steps:
+      - restore_cache:
+          keys:
+            - checkout-cache-{{ .Branch }}-{{ .Environment.CIRCLE_SHA1 }}
+      - restore_cache:
+          keys:
+            - dependency-cache-{{ .Branch }}-{{ checksum "package.json" }}
+      - run: yarn install
+      - save_cache:
+          key: dependency-cache-{{ .Branch }}-{{ checksum "package.json" }}
+          paths:
+            - ~/app/node_modules
 #
 #  test:
 #      <<: *defaults
@@ -109,12 +109,12 @@ workflows:
           filters:
             tags:
               only: /v[0-9]+(\.[0-9]+)*/
-#      - bundle_dependencies:
-#          requires:
-#            - checkout_code
-#          filters:
-#            tags:
-#              only: /v[0-9]+(\.[0-9]+)*/
+      - bundle_dependencies:
+          requires:
+            - checkout_code
+          filters:
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*/
 #      - test:
 #          requires:
 #            - checkout_code
