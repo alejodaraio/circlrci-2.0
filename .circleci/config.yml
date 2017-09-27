@@ -93,18 +93,18 @@ jobs:
           name: Upload the build to DEV AWS
           command: |
             echo "This is a dummy deploy, here we can upload the source code in the server!"
-#  release:
-#    machine:
-#      enabled: true
-#    working_directory: ~/app
-#    steps:
-#      - attach_workspace:
-#          at: ./
-#      - run:
-#          name: Publish release in Github
-#          command: |
-#            wget https://github.com/tcnksm/ghr/releases/download/v0.5.2/ghr_v0.5.2_linux_amd64.zip && unzip ghr_v0.5.2_linux_amd64.zip
-#            ./ghr -t $GITHUB_TOKEN -u $CIRCLE_PROJECT_USERNAME -r $CIRCLE_PROJECT_REPONAME $CIRCLE_TAG  ~/app/build.tar.gz
+  release:
+    machine:
+      enabled: true
+    working_directory: ~/app
+    steps:
+      - attach_workspace:
+          at: ./
+      - run:
+          name: Publish release in Github
+          command: |
+            wget https://github.com/tcnksm/ghr/releases/download/v0.5.2/ghr_v0.5.2_linux_amd64.zip && unzip ghr_v0.5.2_linux_amd64.zip
+            ./ghr -t $GITHUB_TOKEN -u $CIRCLE_PROJECT_USERNAME -r $CIRCLE_PROJECT_REPONAME $CIRCLE_TAG  ~/app/build.tar.gz
 
 workflows:
   version: 2
@@ -117,33 +117,33 @@ workflows:
       - bundle_dependencies:
           requires:
             - checkout_code
-#          filters:
-#            tags:
-#              only: /v[0-9]+(\.[0-9]+)*/
+          filters:
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*/
       - test:
           requires:
             - checkout_code
             - bundle_dependencies
-#          filters:
-#            tags:
-#              only: /v[0-9]+(\.[0-9]+)*/
+          filters:
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*/
       - build_dist:
           requires:
             - checkout_code
             - bundle_dependencies
-#          filters:
-#            tags:
-#              only: /v[0-9]+(\.[0-9]+)*/
+          filters:
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*/
       - deploy:
           requires:
             - test
             - build_dist
-#      - release:
-#          requires:
-#            - test
-#            - build_dist
-#          filters:
-#            tags:
-#              only: /v[0-9]+(\.[0-9]+)*/
-#            branches:
-#              ignore: /.*/
+      - release:
+          requires:
+            - test
+            - build_dist
+          filters:
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*/
+            branches:
+              ignore: /.*/
