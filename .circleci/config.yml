@@ -74,25 +74,25 @@ jobs:
           paths:
             - build.tar.gz
 
-#  deploy:
-#    docker:
-#      - image: circleci/node:6.10.3
-#    working_directory: ~/app
-#    steps:
-#      - restore_cache:
-#          keys:
-#            - checkout-cache-{{ .Branch }}-{{ .Environment.CIRCLE_SHA1 }}
-#      - restore_cache:
-#          keys:
-#            - dependency-cache-{{ .Branch }}-{{ checksum "package.json" }}
-#
-#      - attach_workspace:
-#          at: ./
-#
-#      - deploy:
-#          name: Upload the build to DEV AWS
-#          command: |
-#            echo "This is a dummy deploy, here we can upload the source code in the server!"
+  deploy:
+    docker:
+      - image: circleci/node:6.10.3
+    working_directory: ~/app
+    steps:
+      - restore_cache:
+          keys:
+            - checkout-cache-{{ .Branch }}-{{ .Environment.CIRCLE_SHA1 }}
+      - restore_cache:
+          keys:
+            - dependency-cache-{{ .Branch }}-{{ checksum "package.json" }}
+
+      - attach_workspace:
+          at: ./
+
+      - deploy:
+          name: Upload the build to DEV AWS
+          command: |
+            echo "This is a dummy deploy, here we can upload the source code in the server!"
 #  release:
 #    machine:
 #      enabled: true
@@ -134,10 +134,10 @@ workflows:
 #          filters:
 #            tags:
 #              only: /v[0-9]+(\.[0-9]+)*/
-#      - deploy:
-#          requires:
-#            - test
-#            - build_dist
+      - deploy:
+          requires:
+            - test
+            - build_dist
 #      - release:
 #          requires:
 #            - test
