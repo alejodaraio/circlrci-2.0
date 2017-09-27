@@ -29,48 +29,48 @@ jobs:
           key: dependency-cache-{{ .Branch }}-{{ checksum "package.json" }}
           paths:
             - ~/app/node_modules
-#
-#  test:
-#      <<: *defaults
-#      steps:
-#        - restore_cache:
-#            keys:
-#              - checkout-cache-{{ .Branch }}-{{ .Environment.CIRCLE_SHA1 }}
-#        - restore_cache:
-#            keys:
-#              - dependency-cache-{{ .Branch }}-{{ checksum "package.json" }}
-#        - run: yarn test
-#
-#  build_dist:
-#    <<: *defaults
-#    steps:
-#      - restore_cache:
-#          keys:
-#            - checkout-cache-{{ .Branch }}-{{ .Environment.CIRCLE_SHA1 }}
-#      - restore_cache:
-#          keys:
-#            - dependency-cache-{{ .Branch }}-{{ checksum "package.json" }}
-#
-#      - run:
-#          name: Compile the build
-#          command: |
-#            yarn run build
-#
-#      - run:
-#          name: Zip the Build
-#          command: |
-#            tar --append --file=build.tar.gz ./build
-#            tar --append --file=build.tar.gz ./package.json
-#            tar --append --file=build.tar.gz ./node_modules
-#
-#      - store_artifacts:
-#          path: build.tar.gz
-#
-#      - persist_to_workspace:
-#          root: ./
-#          paths:
-#            - build.tar.gz
-#
+
+  test:
+      <<: *defaults
+      steps:
+        - restore_cache:
+            keys:
+              - checkout-cache-{{ .Branch }}-{{ .Environment.CIRCLE_SHA1 }}
+        - restore_cache:
+            keys:
+              - dependency-cache-{{ .Branch }}-{{ checksum "package.json" }}
+        - run: yarn test
+
+  build_dist:
+    <<: *defaults
+    steps:
+      - restore_cache:
+          keys:
+            - checkout-cache-{{ .Branch }}-{{ .Environment.CIRCLE_SHA1 }}
+      - restore_cache:
+          keys:
+            - dependency-cache-{{ .Branch }}-{{ checksum "package.json" }}
+
+      - run:
+          name: Compile the build
+          command: |
+            yarn run build
+
+      - run:
+          name: Zip the Build
+          command: |
+            tar --append --file=build.tar.gz ./build
+            tar --append --file=build.tar.gz ./package.json
+            tar --append --file=build.tar.gz ./node_modules
+
+      - store_artifacts:
+          path: build.tar.gz
+
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - build.tar.gz
+
 #  deploy:
 #    <<: *defaults
 #    steps:
@@ -115,20 +115,20 @@ workflows:
           filters:
             tags:
               only: /v[0-9]+(\.[0-9]+)*/
-#      - test:
-#          requires:
-#            - checkout_code
-#            - bundle_dependencies
-#          filters:
-#            tags:
-#              only: /v[0-9]+(\.[0-9]+)*/
-#      - build_dist:
-#          requires:
-#            - checkout_code
-#            - bundle_dependencies
-#          filters:
-#            tags:
-#              only: /v[0-9]+(\.[0-9]+)*/
+      - test:
+          requires:
+            - checkout_code
+            - bundle_dependencies
+          filters:
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*/
+      - build_dist:
+          requires:
+            - checkout_code
+            - bundle_dependencies
+          filters:
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*/
 #      - deploy:
 #          requires:
 #            - test
