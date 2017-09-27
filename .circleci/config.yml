@@ -15,91 +15,91 @@ jobs:
           paths:
             - ~/app
 
-  bundle_dependencies:
-    <<: *defaults
-    steps:
-      - restore_cache:
-          keys:
-            - checkout-cache-{{ .Branch }}-{{ .Environment.CIRCLE_SHA1 }}
-      - restore_cache:
-          keys:
-            - dependency-cache-{{ .Branch }}-{{ checksum "package.json" }}
-      - run: yarn install
-      - save_cache:
-          key: dependency-cache-{{ .Branch }}-{{ checksum "package.json" }}
-          paths:
-            - ~/app/node_modules
-
-  test:
-      <<: *defaults
-      steps:
-        - restore_cache:
-            keys:
-              - checkout-cache-{{ .Branch }}-{{ .Environment.CIRCLE_SHA1 }}
-        - restore_cache:
-            keys:
-              - dependency-cache-{{ .Branch }}-{{ checksum "package.json" }}
-        - run: yarn test
-
-  build_dist:
-    <<: *defaults
-    steps:
-      - restore_cache:
-          keys:
-            - checkout-cache-{{ .Branch }}-{{ .Environment.CIRCLE_SHA1 }}
-      - restore_cache:
-          keys:
-            - dependency-cache-{{ .Branch }}-{{ checksum "package.json" }}
-
-      - run:
-          name: Compile the build
-          command: |
-            yarn run build
-
-      - run:
-          name: Zip the Build
-          command: |
-            tar --append --file=build.tar.gz ./build
-            tar --append --file=build.tar.gz ./package.json
-            tar --append --file=build.tar.gz ./node_modules
-
-      - store_artifacts:
-          path: build.tar.gz
-
-      - persist_to_workspace:
-          root: ./
-          paths:
-            - build.tar.gz
-
-  deploy:
-    <<: *defaults
-    steps:
-      - restore_cache:
-          keys:
-            - checkout-cache-{{ .Branch }}-{{ .Environment.CIRCLE_SHA1 }}
-      - restore_cache:
-          keys:
-            - dependency-cache-{{ .Branch }}-{{ checksum "package.json" }}
-
-      - attach_workspace:
-          at: ./
-
-      - deploy:
-          name: Upload the build to DEV AWS
-          command: |
-            echo "This is a dummy deploy, here we can upload the source code in the server!"
-  release:
-    machine:
-      enabled: true
-    working_directory: ~/app
-    steps:
-      - attach_workspace:
-          at: ./
-      - run:
-          name: Publish release in Github
-          command: |
-            wget https://github.com/tcnksm/ghr/releases/download/v0.5.2/ghr_v0.5.2_linux_amd64.zip && unzip ghr_v0.5.2_linux_amd64.zip
-            ./ghr -t $GITHUB_TOKEN -u $CIRCLE_PROJECT_USERNAME -r $CIRCLE_PROJECT_REPONAME $CIRCLE_TAG  ~/app/build.tar.gz
+#  bundle_dependencies:
+#    <<: *defaults
+#    steps:
+#      - restore_cache:
+#          keys:
+#            - checkout-cache-{{ .Branch }}-{{ .Environment.CIRCLE_SHA1 }}
+#      - restore_cache:
+#          keys:
+#            - dependency-cache-{{ .Branch }}-{{ checksum "package.json" }}
+#      - run: yarn install
+#      - save_cache:
+#          key: dependency-cache-{{ .Branch }}-{{ checksum "package.json" }}
+#          paths:
+#            - ~/app/node_modules
+#
+#  test:
+#      <<: *defaults
+#      steps:
+#        - restore_cache:
+#            keys:
+#              - checkout-cache-{{ .Branch }}-{{ .Environment.CIRCLE_SHA1 }}
+#        - restore_cache:
+#            keys:
+#              - dependency-cache-{{ .Branch }}-{{ checksum "package.json" }}
+#        - run: yarn test
+#
+#  build_dist:
+#    <<: *defaults
+#    steps:
+#      - restore_cache:
+#          keys:
+#            - checkout-cache-{{ .Branch }}-{{ .Environment.CIRCLE_SHA1 }}
+#      - restore_cache:
+#          keys:
+#            - dependency-cache-{{ .Branch }}-{{ checksum "package.json" }}
+#
+#      - run:
+#          name: Compile the build
+#          command: |
+#            yarn run build
+#
+#      - run:
+#          name: Zip the Build
+#          command: |
+#            tar --append --file=build.tar.gz ./build
+#            tar --append --file=build.tar.gz ./package.json
+#            tar --append --file=build.tar.gz ./node_modules
+#
+#      - store_artifacts:
+#          path: build.tar.gz
+#
+#      - persist_to_workspace:
+#          root: ./
+#          paths:
+#            - build.tar.gz
+#
+#  deploy:
+#    <<: *defaults
+#    steps:
+#      - restore_cache:
+#          keys:
+#            - checkout-cache-{{ .Branch }}-{{ .Environment.CIRCLE_SHA1 }}
+#      - restore_cache:
+#          keys:
+#            - dependency-cache-{{ .Branch }}-{{ checksum "package.json" }}
+#
+#      - attach_workspace:
+#          at: ./
+#
+#      - deploy:
+#          name: Upload the build to DEV AWS
+#          command: |
+#            echo "This is a dummy deploy, here we can upload the source code in the server!"
+#  release:
+#    machine:
+#      enabled: true
+#    working_directory: ~/app
+#    steps:
+#      - attach_workspace:
+#          at: ./
+#      - run:
+#          name: Publish release in Github
+#          command: |
+#            wget https://github.com/tcnksm/ghr/releases/download/v0.5.2/ghr_v0.5.2_linux_amd64.zip && unzip ghr_v0.5.2_linux_amd64.zip
+#            ./ghr -t $GITHUB_TOKEN -u $CIRCLE_PROJECT_USERNAME -r $CIRCLE_PROJECT_REPONAME $CIRCLE_TAG  ~/app/build.tar.gz
 
 workflows:
   version: 2
@@ -109,36 +109,36 @@ workflows:
           filters:
             tags:
               only: /v[0-9]+(\.[0-9]+)*/
-      - bundle_dependencies:
-          requires:
-            - checkout_code
-          filters:
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*/
-      - test:
-          requires:
-            - checkout_code
-            - bundle_dependencies
-          filters:
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*/
-      - build_dist:
-          requires:
-            - checkout_code
-            - bundle_dependencies
-          filters:
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*/
-      - deploy:
-          requires:
-            - test
-            - build_dist
-      - release:
-          requires:
-            - test
-            - build_dist
-          filters:
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*/
-            branches:
-              ignore: /.*/
+#      - bundle_dependencies:
+#          requires:
+#            - checkout_code
+#          filters:
+#            tags:
+#              only: /v[0-9]+(\.[0-9]+)*/
+#      - test:
+#          requires:
+#            - checkout_code
+#            - bundle_dependencies
+#          filters:
+#            tags:
+#              only: /v[0-9]+(\.[0-9]+)*/
+#      - build_dist:
+#          requires:
+#            - checkout_code
+#            - bundle_dependencies
+#          filters:
+#            tags:
+#              only: /v[0-9]+(\.[0-9]+)*/
+#      - deploy:
+#          requires:
+#            - test
+#            - build_dist
+#      - release:
+#          requires:
+#            - test
+#            - build_dist
+#          filters:
+#            tags:
+#              only: /v[0-9]+(\.[0-9]+)*/
+#            branches:
+#              ignore: /.*/
