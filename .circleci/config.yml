@@ -1,144 +1,21 @@
-defaults: &defaults
-  working_directory: ~/app
-  docker:
-    - image: circleci/node:6.10.3
+# This config is equivalent to both the '.circleci/extended/orb-free.yml' and the base '.circleci/config.yml'
+version: 2.1
 
-version: 2
+# Orbs are reusable packages of CircleCI configuration that you may share across projects, enabling you to create encapsulated, parameterized commands, jobs, and executors that can be used across multiple projects.
+# See: https://circleci.com/docs/orb-intro/
+orbs:
+  node: circleci/node@4.7
 
-jobs:
-  checkout_code:
-    <<: *defaults
-    steps:
-      - checkout
-      - save_cache:
-          key: checkout-cache-{{ .Branch }}-{{ .Environment.CIRCLE_SHA1 }}
-          paths:
-            - ~/app
-
-  bundle_dependencies:
-    <<: *defaults
-    steps:
-      - restore_cache:
-          keys:
-            - checkout-cache-{{ .Branch }}-{{ .Environment.CIRCLE_SHA1 }}
-      - restore_cache:
-          keys:
-            - dependency-cache-{{ .Branch }}-{{ checksum "package.json" }}
-      - run: yarn install
-      - save_cache:
-          key: dependency-cache-{{ .Branch }}-{{ checksum "package.json" }}
-          paths:
-            - ~/app/node_modules
-
-  test:
-      <<: *defaults
-      steps:
-        - restore_cache:
-            keys:
-              - checkout-cache-{{ .Branch }}-{{ .Environment.CIRCLE_SHA1 }}
-        - restore_cache:
-            keys:
-              - dependency-cache-{{ .Branch }}-{{ checksum "package.json" }}
-        - run: yarn test
-
-  build_dist:
-    <<: *defaults
-    steps:
-      - restore_cache:
-          keys:
-            - checkout-cache-{{ .Branch }}-{{ .Environment.CIRCLE_SHA1 }}
-      - restore_cache:
-          keys:
-            - dependency-cache-{{ .Branch }}-{{ checksum "package.json" }}
-
-      - run:
-          name: Compile the build
-          command: |
-            yarn run build
-
-      - run:
-          name: Zip the Build
-          command: |
-            tar --append --file=build.tar.gz ./build
-            tar --append --file=build.tar.gz ./package.json
-            tar --append --file=build.tar.gz ./node_modules
-
-      - store_artifacts:
-          path: build.tar.gz
-
-      - persist_to_workspace:
-          root: ./
-          paths:
-            - build.tar.gz
-
-  deploy:
-    <<: *defaults
-    steps:
-      - restore_cache:
-          keys:
-            - checkout-cache-{{ .Branch }}-{{ .Environment.CIRCLE_SHA1 }}
-      - restore_cache:
-          keys:
-            - dependency-cache-{{ .Branch }}-{{ checksum "package.json" }}
-
-      - attach_workspace:
-          at: ./
-
-      - deploy:
-          name: Upload the build to DEV AWS
-          command: |
-            echo "This is a dummy deploy, here we can upload the source code in the server!"
-  release:
-    machine:
-      enabled: true
-    working_directory: ~/app
-    steps:
-      - attach_workspace:
-          at: ./
-      - run:
-          name: Publish release in Github
-          command: |
-            wget https://github.com/tcnksm/ghr/releases/download/v0.5.2/ghr_v0.5.2_linux_amd64.zip && unzip ghr_v0.5.2_linux_amd64.zip
-            ./ghr -t $GITHUB_TOKEN -u $CIRCLE_PROJECT_USERNAME -r $CIRCLE_PROJECT_REPONAME $CIRCLE_TAG  ~/app/build.tar.gz
-
+# Invoke jobs via workflows
+# See: https://circleci.com/docs/configuration-reference/#workflows
 workflows:
-  version: 2
-  build-n-deploy:
+  sample: # This is the name of the workflow, feel free to change it to better match your workflow.
+    # Inside the workflow, you define the jobs you want to run.
     jobs:
-      - checkout_code:
-          filters:
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*/
-      - bundle_dependencies:
-          requires:
-            - checkout_code
-          filters:
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*/
-      - test:
-          requires:
-            - checkout_code
-            - bundle_dependencies
-          filters:
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*/
-      - build_dist:
-          requires:
-            - checkout_code
-            - bundle_dependencies
-          filters:
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*/
-      - deploy:
-          requires:
-            - test
-            - build_dist
-      - release:
-          requires:
-            - test
-            - build_dist
-          filters:
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*/
-            branches:
-              ignore: /.*/
+      - node/test:
+          # This is the node version to use for the `cimg/node` tag
+          # Relevant tags can be found on the CircleCI Developer Hub
+          # https://circleci.com/developer/images/image/cimg/node
+          version: '16.10'
+          # If you are using yarn, change the line below from "npm" to "yarn"
+          pkg-manager: npm
